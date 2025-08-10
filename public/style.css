@@ -1,0 +1,17 @@
+body {
+  font-family: Arial, sans-serif;
+  max-width: 600px;
+  margin: auto;
+  padding: 20px;
+}
+#results {
+  margin-top: 20px;
+  padding: 10px;
+  border: 1px solid #ddd;
+}
+.color-box {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  margin-right: 5px;
+}
