@@ -1,7 +1,7 @@
 import express from "express";
 import multer from "multer";
 import fetch from "node-fetch";
-import Vibrant from "node-vibrant";
+import * as Vibrant from "node-vibrant";
 import fs from "fs";
 import path from "path";
 import dotenv from "dotenv";
@@ -15,15 +15,11 @@ const API_KEY = process.env.API_KEY;
 
 app.use(express.static("public"));
 
-// Subida y análisis de imagen
 app.post("/analyze", upload.single("image"), async (req, res) => {
   try {
     const imagePath = path.resolve(req.file.path);
-
-    // Convertir imagen a base64 para Google Vision
     const imageBase64 = fs.readFileSync(imagePath).toString("base64");
 
-    // Llamar a Google Cloud Vision API
     const visionRes = await fetch(
       `https://vision.googleapis.com/v1/images:annotate?key=${API_KEY}`,
       {
@@ -45,26 +41,21 @@ app.post("/analyze", upload.single("image"), async (req, res) => {
 
     const data = await visionRes.json();
 
-    // Obtener etiquetas
     const labels = data.responses[0].labelAnnotations.map(l => l.description).join(", ");
 
-    // Colores predominantes desde Google Vision
     const colorsVision = data.responses[0].imagePropertiesAnnotation.dominantColors.colors
       .map(c => ({
         color: `rgb(${c.color.red}, ${c.color.green}, ${c.color.blue})`,
         score: c.score.toFixed(2)
       }));
 
-    // Color principal con Color Vibrant (más preciso)
-	const palette = await Vibrant.from(imagePath).getPalette();
-	const mainColor = palette.Vibrant ? palette.Vibrant.rgb : [0, 0, 0];
+    const palette = await Vibrant.from(imagePath).getPalette();
+    const mainColor = palette.Vibrant ? palette.Vibrant.rgb : [0, 0, 0];
 
-
-    // Borrar imagen subida después de procesar
     fs.unlinkSync(imagePath);
 
     res.json({
-      descripcion: labels.split(",")[0], // primera etiqueta como descripción
+      descripcion: labels.split(",")[0],
       etiquetas: labels,
       colores_predominantes: colorsVision,
       color_principal: `rgb(${mainColor[0]}, ${mainColor[1]}, ${mainColor[2]})`
