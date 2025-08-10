@@ -7,7 +7,6 @@ import path from "path";
 import dotenv from "dotenv";
 
 dotenv.config();
-
 const app = express();
 const upload = multer({ dest: "uploads/" });
 const PORT = process.env.PORT || 3000;
@@ -17,6 +16,10 @@ app.use(express.static("public"));
 
 app.post("/analyze", upload.single("image"), async (req, res) => {
   try {
+    if (!req.file) {
+      return res.status(400).json({ error: "No se subió ningún archivo." });
+    }
+
     const imagePath = path.resolve(req.file.path);
     const imageBase64 = fs.readFileSync(imagePath).toString("base64");
 
@@ -41,13 +44,12 @@ app.post("/analyze", upload.single("image"), async (req, res) => {
 
     const data = await visionRes.json();
 
-    const labels = data.responses[0].labelAnnotations.map(l => l.description).join(", ");
+    // Comprobación para evitar el TypeError
+    const labelsAnnotation = data.responses[0]?.labelAnnotations;
+    const labels = labelsAnnotation ? labelsAnnotation.map(l => l.description).join(", ") : "No se encontraron etiquetas";
+    const descripcion = labelsAnnotation ? labelsAnnotation[0].description : "Sin descripción";
 
-    const colorsVision = data.responses[0].imagePropertiesAnnotation.dominantColors.colors
-      .map(c => ({
-        color: `rgb(${c.color.red}, ${c.color.green}, ${c.color.blue})`,
-        score: c.score.toFixed(2)
-      }));
+    const colorsVision = data.responses[0]?.imagePropertiesAnnotation?.dominantColors?.colors || [];
 
     const palette = await Vibrant.from(imagePath).getPalette();
     const mainColor = palette.Vibrant ? palette.Vibrant.rgb : [0, 0, 0];
@@ -55,7 +57,7 @@ app.post("/analyze", upload.single("image"), async (req, res) => {
     fs.unlinkSync(imagePath);
 
     res.json({
-      descripcion: labels.split(",")[0],
+      descripcion: descripcion,
       etiquetas: labels,
       colores_predominantes: colorsVision,
       color_principal: `rgb(${mainColor[0]}, ${mainColor[1]}, ${mainColor[2]})`
