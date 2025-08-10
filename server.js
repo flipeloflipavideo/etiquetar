@@ -44,33 +44,27 @@ app.post("/analyze", upload.single("image"), async (req, res) => {
 
     const data = await visionRes.json();
 
-    // Comprobación para evitar el TypeError
     const labelsAnnotation = data.responses[0]?.labelAnnotations;
     const labels = labelsAnnotation ? labelsAnnotation.map(l => l.description).join(", ") : "No se encontraron etiquetas";
     const descripcion = labelsAnnotation ? labelsAnnotation[0].description : "Sin descripción";
 
-    const colorsVision = data.responses[0]?.imagePropertiesAnnotation?.dominantColors?.colors || [];
+    const dominantColors = data.responses[0]?.imagePropertiesAnnotation?.dominantColors?.colors;
+    const colorsVision = dominantColors ? dominantColors : [];
 
-    const palette = await Vibrant.from(imagePath).getPalette();
-
-    // Comprobación para evitar el TypeError
     let mainColor = [0, 0, 0];
-    if (palette && palette.Vibrant) {
-      mainColor = palette.Vibrant.rgb;
+    try {
+      const palette = await Vibrant.from(imagePath).getPalette();
+      if (palette && palette.Vibrant && palette.Vibrant.rgb) {
+        mainColor = palette.Vibrant.rgb;
+      }
+    } catch (vibrantError) {
+      console.error("Error al extraer color con node-vibrant:", vibrantError);
     }
-
+    
     fs.unlinkSync(imagePath);
 
     res.json({
       descripcion: descripcion,
       etiquetas: labels,
       colores_predominantes: colorsVision,
-      color_principal: `rgb(${mainColor[0]}, ${mainColor[1]}, ${mainColor[2]})`
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Error al procesar la imagen" });
-  }
-});
-
-app.listen(PORT, () => console.log(`Servidor en http://localhost:${PORT}`));
+      color_principal: `rgb(${mainColor[0]}, ${mainColor[1]}, ${main
