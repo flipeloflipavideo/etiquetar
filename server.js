@@ -1,7 +1,7 @@
 import express from "express";
 import multer from "multer";
 import fetch from "node-fetch";
-import ColorThief from "color-thief";
+import Vibrant from "node-vibrant";
 import fs from "fs";
 import path from "path";
 import dotenv from "dotenv";
@@ -55,9 +55,10 @@ app.post("/analyze", upload.single("image"), async (req, res) => {
         score: c.score.toFixed(2)
       }));
 
-    // Color principal con Color Thief (más preciso)
-    const colorThief = new ColorThief();
-    const mainColor = colorThief.getColor(imagePath);
+    // Color principal con Color Vibrant (más preciso)
+	const palette = await Vibrant.from(imagePath).getPalette();
+	const mainColor = palette.Vibrant ? palette.Vibrant.rgb : [0, 0, 0];
+
 
     // Borrar imagen subida después de procesar
     fs.unlinkSync(imagePath);
