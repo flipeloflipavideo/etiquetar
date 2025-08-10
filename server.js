@@ -52,7 +52,12 @@ app.post("/analyze", upload.single("image"), async (req, res) => {
     const colorsVision = data.responses[0]?.imagePropertiesAnnotation?.dominantColors?.colors || [];
 
     const palette = await Vibrant.from(imagePath).getPalette();
-    const mainColor = palette.Vibrant ? palette.Vibrant.rgb : [0, 0, 0];
+
+    // Comprobación para evitar el TypeError
+    let mainColor = [0, 0, 0];
+    if (palette && palette.Vibrant) {
+      mainColor = palette.Vibrant.rgb;
+    }
 
     fs.unlinkSync(imagePath);
 
