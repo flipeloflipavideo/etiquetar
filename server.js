@@ -67,4 +67,12 @@ app.post("/analyze", upload.single("image"), async (req, res) => {
       descripcion: descripcion,
       etiquetas: labels,
       colores_predominantes: colorsVision,
-      color_principal: `rgb(${mainColor[0]}, ${mainColor[1]}, ${main
+      color_principal: `rgb(${mainColor[0]}, ${mainColor[1]}, ${mainColor[2]})`
+    });
+  } catch (error) {
+    console.error("Error en el servidor:", error);
+    res.status(500).json({ error: "Error al procesar la imagen" });
+  }
+});
+
+app.listen(PORT, () => console.log(`Servidor en http://localhost:${PORT}`));
